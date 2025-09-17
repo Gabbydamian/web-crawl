@@ -5,4 +5,4 @@ nixPkgs = ["python39", "libxml2", "libxslt"]
 cmds = ["pip install -r requirements.txt"]
 
 [start]
-cmd = "python bot/main.py"
+cmd = "python ./main.py"
