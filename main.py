@@ -1,6 +1,8 @@
 import os
+import threading
 import logging
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from flask import Flask, request, jsonify
+from telegram import Update
 from telegram.ext import (
     Application,
     CommandHandler,
@@ -11,34 +13,66 @@ from telegram.ext import (
 )
 from scrapers.jobs_scraper import scrape_jobs
 
-# Get environment variables
-TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
-DRAFT_CHAT_ID = int(os.getenv("DRAFT_CHAT_ID", "-1001234567890"))
-MAIN_CHAT_ID = int(os.getenv("MAIN_CHAT_ID", "-1009876543210"))
+app = Flask(__name__)
 
-logging.basicConfig(level=logging.INFO)
+# Environment variables
+TOKEN = os.getenv("8119359225:AAFkxELes8NS3isQWfhYqYudpnflryx0RdI")
+DRAFT_CHAT_ID = int(os.getenv("DRAFT_CHAT_ID", "-1003096593867"))
+MAIN_CHAT_ID = int(os.getenv("MAIN_CHAT_ID", "-1002904064919"))
 
-# ... rest of your existing code ...
+# Bot application setup
+if TOKEN:
+    application = Application.builder().token(TOKEN).build()
+else:
+    print("ERROR: TELEGRAM_BOT_TOKEN not found!")
+    exit()
 
+# Handlers
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("Bot started.")
+
+async def post(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("Posting command received.")
+
+async def jobs(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    jobs_data = scrape_jobs()
+    if jobs_data:
+        response_text = "Found jobs:\n" + "\n".join(jobs_data)
+    else:
+        response_text = "No jobs found."
+    await update.message.reply_text(response_text)
+
+async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+    await query.edit_message_text(f"Selected option: {query.data}")
+
+async def handle_edit(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text(f"Message received: {update.message.text}")
+
+application.add_handler(CommandHandler("start", start))
+application.add_handler(CommandHandler("post", post))
+application.add_handler(CommandHandler("jobs", jobs))
+application.add_handler(CallbackQueryHandler(button))
+application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_edit))
+
+# Flask endpoints
+@app.route('/')
+@app.route('/health')
+def health():
+    return "OK", 200
+
+@app.route(f'/{TOKEN}', methods=['POST'])
+def webhook():
+    if request.method == "POST":
+        update = Update.de_json(request.get_json(force=True), application.bot)
+        application.process_update(update)
+    return "ok"
+
+# Main function
 def main():
-    if not TOKEN:
-        print("ERROR: TELEGRAM_BOT_TOKEN not found!")
-        return
-    
-    app = Application.builder().token(TOKEN).build()
-    app.add_handler(CommandHandler("start", start))
-    app.add_handler(CommandHandler("post", post))
-    app.add_handler(CommandHandler("jobs", jobs))  # Add this line
-    app.add_handler(CallbackQueryHandler(button))
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_edit))
-    
-    # Use webhook for Railway (better than polling)
-    PORT = int(os.environ.get("PORT", 8000))
-    app.run_webhook(
-        listen="0.0.0.0",
-        port=PORT,
-        webhook_url=f"https://{os.environ.get('RAILWAY_PUBLIC_DOMAIN', 'localhost')}"
-    )
+    port = int(os.environ.get("PORT", 8000))
+    app.run(host="0.0.0.0", port=port)
 
 if __name__ == "__main__":
     main()
