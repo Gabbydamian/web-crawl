@@ -1,0 +1,6 @@
+{
+    "deploy": {
+        "startCommand": "python bot/main.py",
+        "healthcheckPath": "/health"
+    }
+}
