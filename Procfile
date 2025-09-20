@@ -1,1 +1,1 @@
-web: python job_scraper.py
+web: cron

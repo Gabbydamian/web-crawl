@@ -1,1 +1,1 @@
-*/30 * * * * python job_scraper.py
+*/5 * * * * python job_scraper.py
