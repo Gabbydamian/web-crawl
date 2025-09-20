@@ -1,8 +1,0 @@
-[phases.setup]
-nixPkgs = ["python39", "libxml2", "libxslt"]
-
-[phases.install]
-cmds = ["pip install -r requirements.txt"]
-
-[start]
-cmd = "python ./main.py"
