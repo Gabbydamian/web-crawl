@@ -7,8 +7,6 @@ import json
 from datetime import datetime
 from urllib.parse import urljoin
 
-# --- IMPORTANT: CONFIGURATION ---
-# These values should be set as environment variables on Railway for security.
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 TELEGRAM_CHANNEL_ID = os.getenv("TELEGRAM_CHANNEL_ID")
 
